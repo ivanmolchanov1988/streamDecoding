@@ -13,7 +13,6 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using Ghostscript.NET.Rasterizer;
 using System.Diagnostics;
-
 namespace streamDecoding
 {
     public partial class Form1 : Form
@@ -28,7 +27,12 @@ namespace streamDecoding
         public string qr2strNext = string.Empty;
         public string q = string.Empty;
         public int qq = 0;
+        public int x = 0, y = 0;
         //public int oz = 0;
+
+        //Form f2 = new Form();
+        public Graphics gBlack;
+        public Graphics gRed;
 
         public Form1()
         {
@@ -37,13 +41,15 @@ namespace streamDecoding
 
         private void button1_Click(object sender, EventArgs e)
         {
-            textBox1.Text += @"\";
-            textBox2.Text += @"\";
+            if (textBox1.Text.Last().ToString() != @"\")
+                textBox1.Text += @"\";
+            if (textBox2.Text.Last().ToString() != @"\")
+                textBox2.Text += @"\";
             string inputFolder = textBox2.Text;     //2
             string endOutputFolder = textBox1.Text; //1
 
-            //1 собираем все PDF и бежим по ним, сохраняем их в виде jpeg постранично. формат: *имяPDF*_*НомерСтраницы*.jpeg
-            string[] pdfFiles = Directory.GetFiles(inputFolder, "*.pdf", SearchOption.TopDirectoryOnly);
+                //1 собираем все PDF и бежим по ним, сохраняем их в виде jpeg постранично. формат: *имяPDF*_*НомерСтраницы*.jpeg
+                string[] pdfFiles = Directory.GetFiles(inputFolder, "*.pdf", SearchOption.TopDirectoryOnly);
             if (pdfFiles.Count() == 0)
             {
                 MessageBox.Show("No *.pdf in InputFolder!");
@@ -53,6 +59,17 @@ namespace streamDecoding
                 progressBar1.Maximum = 0;
                 progressBar1.Visible = true;
                 int colDocs = pdfFiles.Count();
+
+                // кол-во листов для всех документов. Для progressBar (по идее, их нужно умножать на 3 и добавлять +1 каждый раз по 3 раза соответственно 
+                //(1-tojpeg, 2-jpegToRect, 3-decode(хотя, тут, наверно, может и больше)))
+                foreach (string pdfFile in pdfFiles.OrderBy(pdfFile => File.GetCreationTime(pdfFile)))
+                {
+                    using (var rasterizer = new GhostscriptRasterizer())
+                    {
+                        rasterizer.Open(pdfFile);
+                        progressBar1.Maximum += rasterizer.PageCount * 3;
+                    }
+                }
 
                 foreach (string pdfFile in pdfFiles.OrderBy(pdfFile => File.GetCreationTime(pdfFile)))
                 {
@@ -74,17 +91,13 @@ namespace streamDecoding
                     {
                         string fileName2 = Path.GetFileNameWithoutExtension(qrFile);
                         GOqrDecoding(qrFile, fileName2, endOutputFolder, inputFolder);
-
-                        //if (progressBar1.Maximum < progressBar1.Value)
-                        try
-                        {
-                            progressBar1.Value += 1;
-                        }
-                        catch
-                        {
-
-                        }
+                        progressBar1.Value += 1;
                     }
+
+                    //удаляем temp файлы
+                    string[] allPath = { currentFolder + @"\4img\", currentFolder + @"\blur\", currentFolder + @"\4code\" };
+                    DeleteTempFiles(allPath);
+
                 }
             }
             progressBar1.Visible = false;
@@ -92,9 +105,9 @@ namespace streamDecoding
             progressBar1.Maximum = 0;
             //progressBar1.Dispose();
 
-            string[] allPath = {currentFolder + @"\4img\", currentFolder + @"\blur\", currentFolder + @"\4code\"};
+            //string[] allPath = {currentFolder + @"\4img\", currentFolder + @"\blur\", currentFolder + @"\4code\"};
             MessageBox.Show("complete");
-            DeleteTempFiles(allPath);
+            //DeleteTempFiles(allPath);
             Process.Start("explorer.exe", endOutputFolder);
 
             if (Directory.GetFiles(currentFolder + qrEmpty).Count() != 0)
@@ -381,7 +394,6 @@ namespace streamDecoding
             using (var rasterizer = new GhostscriptRasterizer()) //create an instance for GhostscriptRasterizer
             {
                 rasterizer.Open(inputFile); //opens the PDF file for rasterizing
-                progressBar1.Maximum += (3 * rasterizer.PageCount);
                 for (int page = 1; page <= rasterizer.PageCount; page++)
                 {
                     //set the output image(jpeg's) complete path
@@ -394,7 +406,6 @@ namespace streamDecoding
                     //save the jpeg's
                     pdf2Jpeg.Save(outputJpegPath, ImageFormat.Jpeg);
                     pdf2Jpeg.Dispose();
-
                     progressBar1.Value += 1;
                 }
                 rasterizer.Dispose();
@@ -441,5 +452,58 @@ namespace streamDecoding
                     CreateFolder(folder);
             }
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            
+            f2.Width = 210 *2;     //210;
+            f2.Height = 297 *2;    //297;
+            f2.MinimumSize = f2.Size;
+            f2.MaximumSize = f2.Size;
+            f2.BackColor = Color.White;
+
+            f2.ShowDialog();
+        }
+
+        public void f2_MouseDown(object sender, EventArgs e)
+        {
+            x = MousePosition.X - (f2.Location.X + 3);
+            y = MousePosition.Y - f2.Location.Y - 25;
+            gBlack = f2.CreateGraphics();
+            f2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.f2_MouseMove);
+        }
+
+        public void f2_MouseUp(object sender, EventArgs e)
+        {
+            f2.MouseMove -= new System.Windows.Forms.MouseEventHandler(this.f2_MouseMove);
+            DelGr(gRed);
+            Pen pen = new Pen(Color.Black, 10);
+            Gr(gBlack, pen);
+        }
+
+        public void f2_MouseMove(object sender, EventArgs e)
+        {
+            gRed = f2.CreateGraphics();
+            Pen pen = new Pen(Brushes.DeepPink, 2);
+            DelGr(gRed);
+            Gr(gRed, pen);
+        }
+
+        private void Gr(Graphics g, Pen p)
+        {
+            Rectangle rec;
+            if (x < MousePosition.X - (f2.Location.X + 3))
+                rec = new Rectangle(x, y, (MousePosition.X - (f2.Location.X + 3)) - x - (int)p.Width, (MousePosition.Y - f2.Location.Y - 25) - y - (int)p.Width);
+            else
+                rec = new Rectangle((MousePosition.X - (f2.Location.X + 3)), (MousePosition.Y - f2.Location.Y - 25), x - (MousePosition.X - (f2.Location.X + 3)), y - (MousePosition.Y - (f2.Location.Y + 3)));
+            g.DrawRectangle(p, rec);
+        }
+
+        
+        private void DelGr(Graphics g)
+        {
+            g.Clear(Color.White);
+        }
+        
     }
 }
