@@ -34,6 +34,11 @@ namespace streamDecoding
         public Graphics gBlack;
         public Graphics gRed;
 
+        public int rectX;
+        public int rectY;
+        public int rectW;
+        public int rectH;
+
         public Form1()
         {
             InitializeComponent();
@@ -120,6 +125,7 @@ namespace streamDecoding
 
         private void DeleteTempFiles (string[] allPath)
         {
+            MessageBox.Show("1");
             foreach (string path in allPath)
             {
                 var files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
@@ -374,8 +380,38 @@ namespace streamDecoding
         {
             //область сканирования
             Bitmap pdf2Jpeg = Image.FromFile(inputFile) as Bitmap;
-            Rectangle rect = new Rectangle(pdf2Jpeg.Width / 4, 0, pdf2Jpeg.Width - (pdf2Jpeg.Width / 2), pdf2Jpeg.Height / 32);
-            Bitmap nBitmap = new Bitmap(rect.Width, rect.Height);
+            Rectangle rect;
+            Bitmap nBitmap;
+            if (checkBox1.Checked == true)
+            {
+                rect = new Rectangle(pdf2Jpeg.Width / 4,
+                    0,
+                    pdf2Jpeg.Width - (pdf2Jpeg.Width / 2),
+                    pdf2Jpeg.Height / 32);
+                nBitmap = new Bitmap(rect.Width, rect.Height);
+            }
+            else
+            {
+                if (pdf2Jpeg.Width < ((pdf2Jpeg.Width / rectW) + (pdf2Jpeg.Width / rectX)))
+                {
+                    MessageBox.Show("!!!");
+                    rect = new Rectangle(pdf2Jpeg.Width / rectX,
+                        pdf2Jpeg.Height / rectY,
+                        (pdf2Jpeg.Width / rectW) - (pdf2Jpeg.Width / rectX),
+                        pdf2Jpeg.Height / rectH);
+                    nBitmap = new Bitmap(rect.Width, rect.Height);
+                }
+                else
+                {
+                    rect = new Rectangle(pdf2Jpeg.Width / rectX,
+                        pdf2Jpeg.Height / rectY,
+                        pdf2Jpeg.Width / rectW,
+                        pdf2Jpeg.Height / rectH);
+                    nBitmap = new Bitmap(rect.Width, rect.Height);
+                }
+
+            }
+            //Bitmap nBitmap = new Bitmap(rect.Width, rect.Height);
 
             //делаем новую картинку для поиска QR
             Graphics g = Graphics.FromImage(nBitmap);
@@ -471,6 +507,9 @@ namespace streamDecoding
             y = MousePosition.Y - f2.Location.Y - 25;
             gBlack = f2.CreateGraphics();
             f2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.f2_MouseMove);
+
+            rectX = f2.Width / (x - 5);
+            rectY = f2.Height / (y - 6);
         }
 
         public void f2_MouseUp(object sender, EventArgs e)
@@ -479,6 +518,11 @@ namespace streamDecoding
             DelGr(gRed);
             Pen pen = new Pen(Color.Black, 10);
             Gr(gBlack, pen);
+            //rectX = f2.Width / x;
+            //rectY = y - 10;
+            rectW = (int)(f2.Width / ((MousePosition.X - (f2.Location.X + 3)) - x - pen.Width));
+            rectH = f2.Height / ((MousePosition.Y - f2.Location.Y - 25) - y - (int)pen.Width);
+            MessageBox.Show(rectX.ToString() + " " + rectY.ToString() + " " + rectW.ToString() + " " + rectH.ToString() + " ");
         }
 
         public void f2_MouseMove(object sender, EventArgs e)
@@ -493,16 +537,34 @@ namespace streamDecoding
         {
             Rectangle rec;
             if (x < MousePosition.X - (f2.Location.X + 3))
+            {
                 rec = new Rectangle(x, y, (MousePosition.X - (f2.Location.X + 3)) - x - (int)p.Width, (MousePosition.Y - f2.Location.Y - 25) - y - (int)p.Width);
+                
+
+                
+            }
             else
+            {
                 rec = new Rectangle((MousePosition.X - (f2.Location.X + 3)), (MousePosition.Y - f2.Location.Y - 25), x - (MousePosition.X - (f2.Location.X + 3)), y - (MousePosition.Y - (f2.Location.Y + 3)));
+
+            }
             g.DrawRectangle(p, rec);
         }
 
-        
+        private void f2_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
         private void DelGr(Graphics g)
         {
-            g.Clear(Color.White);
+            if (g != null)
+                g.Clear(Color.White);
         }
         
     }
