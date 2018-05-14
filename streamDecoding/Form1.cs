@@ -125,7 +125,7 @@ namespace streamDecoding
 
         private void DeleteTempFiles (string[] allPath)
         {
-            MessageBox.Show("1");
+            //MessageBox.Show("1");
             foreach (string path in allPath)
             {
                 var files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
@@ -394,7 +394,7 @@ namespace streamDecoding
             {
                 if (pdf2Jpeg.Width < ((pdf2Jpeg.Width / rectW) + (pdf2Jpeg.Width / rectX)))
                 {
-                    MessageBox.Show("!!!");
+                    //MessageBox.Show("!!!");
                     rect = new Rectangle(pdf2Jpeg.Width / rectX,
                         pdf2Jpeg.Height / rectY,
                         (pdf2Jpeg.Width / rectW) - (pdf2Jpeg.Width / rectX),
@@ -522,7 +522,7 @@ namespace streamDecoding
             //rectY = y - 10;
             rectW = (int)(f2.Width / ((MousePosition.X - (f2.Location.X + 3)) - x - pen.Width));
             rectH = f2.Height / ((MousePosition.Y - f2.Location.Y - 25) - y - (int)pen.Width);
-            MessageBox.Show(rectX.ToString() + " " + rectY.ToString() + " " + rectW.ToString() + " " + rectH.ToString() + " ");
+            //MessageBox.Show(rectX.ToString() + " " + rectY.ToString() + " " + rectW.ToString() + " " + rectH.ToString() + " ");
         }
 
         public void f2_MouseMove(object sender, EventArgs e)
